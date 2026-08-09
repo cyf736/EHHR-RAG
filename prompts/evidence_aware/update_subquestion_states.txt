@@ -1,0 +1,145 @@
+Variables:
+
+!<INPUT 0>!: original complex question
+!<INPUT 1>!: current sub-question list
+!<INPUT 2>!: current evidence pool
+!<INPUT 3>!: retry instruction if previous output failed, otherwise empty
+
+<comment-block-marker>###</comment-block-marker>
+
+Task:
+You are updating the state of each sub-question in an evidence-aware reasoning process.
+This is a state update task, not a full re-classification from scratch.
+Treat the current sub-question list as the current source of truth.
+
+For every sub-question, output:
+- id
+- ans: question completeness state, "ready" or "not-ready"
+  - "ready": all prerequisites are already satisfied, so the sub-question can now be processed directly
+  - "not-ready": one or more prerequisites are still missing
+- sup: evidence support state, "none", "low", or "high"
+  - "none": no usable evidence currently supports the sub-question
+  - "low": some evidence is relevant, but still not enough for a stable answer
+  - "high": evidence is strong enough to support a stable answer
+- value: the current best short answer if supported, otherwise empty string
+- pred: updated entity anchors if the evidence now makes hidden entities explicit
+- mode: the most suitable next retrieval mode if another retrieval round is still useful
+
+State transition policy:
+1. A sub-question must be marked "ready" immediately once there are no unresolved variables in "pred".
+2. A sub-question should be changed to "ready" if its hidden entity, hidden object, or prerequisite answer has already been resolved by earlier sub-questions or by the evidence pool.
+3. If a sub-question contains placeholders such as "the book identified in sq_1", "the athlete identified earlier", or hidden anchors like "x1:book", and that missing referent is now known, convert ans to "ready" in this round.
+4. If a sub-question is "ready" but there is still no usable evidence, set sup to "none".
+5. If there is partial evidence but the answer is still uncertain or indirect, set sup to "low".
+6. If the evidence clearly supports a concrete answer, set sup to "high" and fill value.
+7. If sup becomes "high", mode should usually become "none".
+8. If ans is "not-ready", then sup should usually stay "none" unless the evidence already partially resolves the missing prerequisite.
+9. Once a sub-question becomes "ready", it must never be changed back to "not-ready".
+10. If the current input state of a sub-question is already "ready", your output must also keep it as "ready".
+11. Lack of new evidence is not a valid reason to change "ready" into "not-ready".
+12. Evidence changes support level and value; it does not remove already satisfied prerequisites.
+
+Rules:
+1. If the evidence pool resolves a hidden prerequisite, later dependent sub-questions should become "ready" immediately in this round.
+2. Do not wait for another round once all prerequisites are already resolved.
+3. Keep unchanged values stable when the evidence does not justify an update.
+4. When the evidence pool is empty, preserve every current ans value exactly as given in the input.
+5. Return one output object for every input sub-question.
+6. Return JSON only.
+7. Do not output markdown or extra text.
+8. Keep "value" short. Prefer a short entity, year, title, quantity, or yes/no answer instead of a sentence.
+
+Output format:
+[
+  {
+    "id": "sq_1",
+    "ans": "ready",
+    "sup": "high",
+    "value": "short answer",
+    "pred": ["anchor 1", "anchor 2"],
+    "mode": "none"
+  }
+]
+
+Example:
+[
+  {
+    "id": "sq_1",
+    "ans": "ready",
+    "sup": "high",
+    "value": "1982",
+    "pred": ["Honda"],
+    "mode": "none"
+  },
+  {
+    "id": "sq_2",
+    "ans": "ready",
+    "sup": "none",
+    "value": "",
+    "pred": ["Nissan"],
+    "mode": "Entity"
+  }
+]
+
+Example of correct readiness transition:
+Current sub-questions:
+- sq_1 asks: "Which book did Phillip Pullman write ... ?" and now has value = "Northern Lights"
+- sq_2 asks: "In what year was the book identified in sq_1 put into audio format?"
+
+Correct update:
+- sq_2 must become "ready" now, because its missing referent is no longer missing.
+- If no evidence yet answers sq_2, then sq_2 should be:
+  {
+    "id": "sq_2",
+    "ans": "ready",
+    "sup": "none",
+    "value": "",
+    "pred": ["Northern Lights"],
+    "mode": "Entity"
+  }
+
+Example of support transition:
+- If the evidence clearly says "Northern Lights was released as an audiobook in 2002"
+  then:
+  ans = "ready"
+  sup = "high"
+  value = "2002"
+  mode = "none"
+
+Example of monotonic state update:
+Input sub-question state:
+{
+  "id": "sq_1",
+  "ans": "ready",
+  "sup": "none",
+  "pred": ["plywood"]
+}
+
+Current evidence pool:
+[]
+
+Correct output:
+{
+  "id": "sq_1",
+  "ans": "ready",
+  "sup": "none",
+  "value": "",
+  "pred": ["plywood"],
+  "mode": "Entity"
+}
+
+Why:
+- The question was already ready in the input state.
+- No new evidence does not make it not-ready again.
+
+Original question:
+!<INPUT 0>!
+
+Current sub-question list:
+!<INPUT 1>!
+
+Current evidence pool:
+!<INPUT 2>!
+
+Retry instruction:
+!<INPUT 3>!

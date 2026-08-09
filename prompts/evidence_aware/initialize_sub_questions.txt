@@ -1,0 +1,113 @@
+Variables:
+
+!<INPUT 0>!: complex question
+!<INPUT 1>!: retry instruction if previous output failed, otherwise empty
+
+<comment-block-marker>###</comment-block-marker>
+
+Task:
+You are designing an evidence-aware multi-hop reasoning plan for a small instruction-following model.
+Be conservative, explicit, and format-stable.
+
+Given one complex question, decompose it into a short ordered list of sub-questions.
+
+Each sub-question must contain:
+- id: string. Use "sq_1", "sq_2", ...
+- text: string. A single concrete sub-question.
+- pred: list[string]. Entity anchors.
+  Definition:
+  - known anchor: explicit entity in the question, such as "Tom", "Honda", "London"
+  - unknown anchor: hidden entity placeholder, such as "sq_1_x1:person", "sq_2_x2:organization"
+- ans: string. Only "ready" or "not-ready".
+  Definition:
+  - "ready": this sub-question can already be retrieved now
+  - "not-ready": this sub-question still depends on an earlier answer
+- is_final: boolean. True only for the critical final sub-question that decides when the whole loop can stop
+
+State meaning for ans:
+- "ready": all prerequisites are already available now, so this sub-question can be retrieved immediately
+- "not-ready": at least one prerequisite is still missing, so this sub-question cannot be retrieved yet
+
+Rules:
+1. Keep the list short, usually 2 to 5 items.
+2. Use "ready" only when the sub-question can be handled immediately.
+3. Use "not-ready" for downstream questions that need an earlier answer.
+4. If a hidden entity is needed, put a placeholder in pred.
+5. Every placeholder in pred must include the source sub-question id and variable id, using the format "sq_k_xm:type".
+6. The prefix "sq_k" tells us which earlier sub-question the variable comes from.
+7. Do not use bare placeholders such as "x1:person" without the source sub-question id.
+8. Mark exactly one final critical sub-question with "is_final": true unless the whole original question itself is directly answerable.
+9. Return JSON only.
+10. Do not output markdown, explanations, or extra text.
+
+Output format:
+[
+  {
+    "id": "sq_1",
+    "text": "...",
+    "pred": ["..."],
+    "ans": "ready",
+    "is_final": false
+  }
+]
+
+Example 1:
+Question:
+What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?
+
+Output:
+[
+  {
+    "id": "sq_1",
+    "text": "Who portrayed Corliss Archer in the film Kiss and Tell?",
+    "pred": ["Kiss and Tell", "Corliss Archer"],
+    "ans": "ready",
+    "is_final": false
+  },
+  {
+    "id": "sq_2",
+    "text": "What government position was held by the actress identified in sq_1?",
+    "pred": ["sq_1_x1:actress"],
+    "ans": "not-ready",
+    "is_final": true
+  }
+]
+
+Example 2:
+Question:
+Were Scott Derrickson and Ed Wood of the same nationality?
+
+Output:
+[
+  {
+    "id": "sq_1",
+    "text": "What is the nationality of Scott Derrickson?",
+    "pred": ["Scott Derrickson"],
+    "ans": "ready",
+    "is_final": false
+  },
+  {
+    "id": "sq_2",
+    "text": "What is the nationality of Ed Wood?",
+    "pred": ["Ed Wood"],
+    "ans": "ready",
+    "is_final": false
+  },
+  {
+    "id": "sq_3",
+    "text": "Are the nationalities found for Scott Derrickson and Ed Wood the same?",
+    "pred": ["sq_1_x1:nationality", "sq_2_x2:nationality"],
+    "ans": "not-ready",
+    "is_final": true
+  }
+]
+
+Important distinction:
+- If a question directly asks about a known named entity, mark it "ready".
+- If a question refers to "the person in sq_1", "the company found earlier", "the book identified before", or any hidden entity that is not resolved yet, mark it "not-ready".
+
+Question:
+!<INPUT 0>!
+
+Retry instruction:
+!<INPUT 1>!

@@ -1,0 +1,12 @@
+__pycache__/
+.pytest_cache/
+.idea/
+.env
+logs/
+dataset/*/db/*
+dataset/*/outputs/*
+dataset/*/db/
+dataset/*/outputs/
+*.pyc
+
+tests/

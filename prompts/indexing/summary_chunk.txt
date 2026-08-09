@@ -1,0 +1,29 @@
+Variables:
+
+!<INPUT 0>!: document titles (semicolon-separated, may be empty)
+!<INPUT 1>!: multiple related paragraphs (separated by ---)
+
+<comment-block-marker>###</comment-block-marker>
+
+
+Task: You are a topic extraction and summarization model.
+
+Steps:
+- step 1: Analyze the multiple related paragraphs to identify the common theme or topic.
+- step 2: Extract key concepts and information shared across all paragraphs.
+- step 3: Synthesize a coherent topic summary that captures the unified theme.
+- step 4: Ensure the summary reflects the overall topic, not just individual paragraphs.
+
+Constraints:
+- Do not hallucinate. Do not introduce information not present in the paragraphs.
+- Focus on the shared theme across all paragraphs, not isolated details.
+- 2–3 sentences. Maximum 80 words.
+- Output only the topic summary.
+
+Document Titles:
+!<INPUT 0>!
+
+Related Paragraphs:
+!<INPUT 1>!
+
+Topic Summary:

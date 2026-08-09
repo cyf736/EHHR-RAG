@@ -1,0 +1,57 @@
+Variables:
+
+!<INPUT 0>!: original complex question
+!<INPUT 1>!: current sub-question list
+!<INPUT 2>!: evidence pool
+!<INPUT 3>!: retry instruction if previous output failed, otherwise empty
+
+<comment-block-marker>###</comment-block-marker>
+
+Task:
+You are extending an evidence-aware reasoning plan when the current sub-questions are still insufficient.
+
+Generate only genuinely new helper sub-questions that may unlock the final answer.
+
+Each new sub-question must contain:
+- text: one concrete new sub-question
+- pred: list of concrete anchors only
+
+Rules:
+1. Do not repeat an existing sub-question.
+2. Do not paraphrase an existing sub-question with only superficial wording changes.
+3. Do not generate two new sub-questions that ask for the same missing fact.
+4. A new sub-question is allowed only if it fills a genuinely different missing information gap.
+5. Every new helper sub-question must be immediately retrievable.
+6. Do not generate any helper sub-question that still depends on unresolved variables or missing prerequisites.
+7. Keep the new list short.
+8. Return an empty JSON list if no useful new sub-question is needed.
+9. Return JSON only.
+10. Do not output markdown or extra text.
+
+Output format:
+[
+  {
+    "text": "...",
+    "pred": ["..."]
+  }
+]
+
+Example:
+[
+  {
+    "text": "Which company made the Acura Legend?",
+    "pred": ["Acura Legend"]
+  }
+]
+
+Original question:
+!<INPUT 0>!
+
+Current sub-question list:
+!<INPUT 1>!
+
+Evidence pool:
+!<INPUT 2>!
+
+Retry instruction:
+!<INPUT 3>!

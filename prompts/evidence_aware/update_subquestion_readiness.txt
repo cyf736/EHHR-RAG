@@ -1,0 +1,116 @@
+Variables:
+
+!<INPUT 0>!: original complex question
+!<INPUT 1>!: current sub-question list after evidence-view update
+!<INPUT 2>!: current evidence texts
+!<INPUT 3>!: retry instruction if previous output failed, otherwise empty
+
+<comment-block-marker>###</comment-block-marker>
+
+Task:
+You are updating the readiness state of each sub-question.
+
+This step decides whether each sub-question is now processable.
+If a sub-question becomes processable, you must also rewrite it into a concrete, directly retrievable question.
+
+Output only the sub-questions that actually need an update in this round.
+If a sub-question does not need any change, do not output it.
+
+For every updated sub-question, output:
+- id
+- ans
+- text
+- pred
+
+State meaning:
+- "ready": all prerequisites are already resolved, so the sub-question can now be directly retrieved or answered
+- "not-ready": at least one prerequisite is still missing
+
+Core update policy:
+1. This is a monotonic update.
+2. If a sub-question is already "ready" in the input, it must stay "ready" in the output.
+3. A "ready" sub-question must never go back to "not-ready".
+4. If a previously missing prerequisite has now been resolved by earlier sub-questions, refined `pred`, or the evidence texts, then the dependent sub-question should become "ready" immediately in this round.
+5. Lack of direct answer evidence is not a reason to keep a question "not-ready" if its prerequisites are already resolved.
+
+Rewriting policy:
+1. If a sub-question stays "not-ready", keep its current `text` and `pred` unchanged.
+2. If a sub-question is already "ready", keep its current `text` and `pred` unchanged unless they are clearly inconsistent with already resolved prerequisites.
+3. If a sub-question changes from "not-ready" to "ready", rewrite its `text` and `pred` so that the question becomes concrete and directly retrievable.
+4. Replace abstract placeholders with resolved entities or values whenever possible.
+5. Do not keep vague placeholders in a question that has just become "ready" if the concrete referent is already known.
+
+Placeholder guidance:
+- Source-aware placeholders such as "sq_1_x1:artist" mean that the needed entity came from sub-question "sq_1".
+- If that earlier sub-question already has a concrete `value`, use it to rewrite the current question.
+
+Output format:
+[
+  {
+    "id": "sq_1",
+    "ans": "ready",
+    "text": "concrete question text",
+    "pred": ["concrete anchor 1", "concrete anchor 2"]
+  }
+]
+
+If no sub-question needs any update, return:
+[]
+
+Example 1:
+Input:
+- sq_1 value = "Northern Lights"
+- sq_2 text = "In what year was the book identified in sq_1 put into audio format?"
+- sq_2 pred = ["sq_1_x1:book"]
+- sq_2 ans = "not-ready"
+
+Correct output:
+{
+  "id": "sq_2",
+  "ans": "ready",
+  "text": "In what year was Northern Lights put into audio format?",
+  "pred": ["Northern Lights"]
+}
+
+Example 2:
+Input:
+- sq_1 ans = "ready"
+- sq_1 text = "Who is the cover artist of Multiverse: Exploring Poul Anderson's Worlds?"
+- sq_1 pred = ["Multiverse: Exploring Poul Anderson's Worlds"]
+- evidence texts = []
+
+Correct output:
+{
+  "id": "sq_1",
+  "ans": "ready",
+  "text": "Who is the cover artist of Multiverse: Exploring Poul Anderson's Worlds?",
+  "pred": ["Multiverse: Exploring Poul Anderson's Worlds"]
+}
+
+Example 3:
+Input:
+- sq_1 value = "Tom"
+- sq_2 value = "Jerry"
+- sq_3 text = "Who is older, the doctors identified earlier?"
+- sq_3 pred = ["sq_1_x1:doctor", "sq_2_x1:doctor"]
+- sq_3 ans = "not-ready"
+
+Correct output:
+{
+  "id": "sq_3",
+  "ans": "ready",
+  "text": "Who is older, Tom or Jerry?",
+  "pred": ["Tom", "Jerry"]
+}
+
+Original question:
+!<INPUT 0>!
+
+Current sub-question list:
+!<INPUT 1>!
+
+Current evidence texts:
+!<INPUT 2>!
+
+Retry instruction:
+!<INPUT 3>!

@@ -1,0 +1,60 @@
+[
+  {
+    "id": 1,
+    "question_id": "5ac31bbd554299741d48a1f9",
+    "question": "Vincent Drucci was a member of a rival gang to the mob boss who was known by what nickname?",
+    "answers": [
+      "Scarface"
+    ],
+    "supporting_titles": [
+      [
+        "Vincent Drucci",
+        0
+      ],
+      [
+        "Al Capone",
+        0
+      ]
+    ]
+  },
+  {
+    "id": 2,
+    "question_id": "5ae7b271554299540e5a564d",
+    "question": "Phillip Pullman's book set in a parallel universe featuring a character named Lyra Belacqua was put into audio in what year?",
+    "answers": [
+      "2002"
+    ],
+    "supporting_titles": [
+      [
+        "Northern Lights Audio",
+        0
+      ],
+      [
+        "Northern Lights Audio",
+        1
+      ],
+      [
+        "Northern Lights (novel)",
+        1
+      ]
+    ]
+  },
+  {
+    "id": 3,
+    "question_id": "5ae3368b5542991a06ce995b",
+    "question": "What relationship did the inventors of the technique through which plywood can be bent in three dimensions have?",
+    "answers": [
+      "husband and wife"
+    ],
+    "supporting_titles": [
+      [
+        "Model 3107 chair",
+        0
+      ],
+      [
+        "Charles and Ray Eames",
+        0
+      ]
+    ]
+  }
+]

@@ -1,0 +1,85 @@
+Variables:
+
+!<INPUT 0>!: original complex question
+!<INPUT 1>!: current sub-question list
+!<INPUT 2>!: current evidence texts
+!<INPUT 3>!: retry instruction if previous output failed, otherwise empty
+
+<comment-block-marker>###</comment-block-marker>
+
+Task:
+You are updating the evidence view of each sub-question.
+
+This step only does three things:
+1. update evidence support level `sup`
+2. extract or refine the short intermediate answer `value`
+3. update `pred` if the evidence makes hidden entities explicit
+
+This step must NOT decide question completeness.
+Do not output `ans`.
+Do not output `mode`.
+
+Field definitions:
+- sup = "none": no usable evidence currently supports this sub-question
+- sup = "low": some evidence is relevant, but it does not directly support a stable answer yet
+- sup = "high": the evidence directly supports a stable answer to this sub-question
+
+Important distinction:
+- If evidence only resolves an earlier prerequisite or identifies an entity, that may help later readiness, but it does NOT automatically mean the current sub-question has `sup = high`.
+- Only set `sup = high` when the evidence directly answers the current sub-question itself.
+- If the candidate answer does not match the answer type required by the question, do not set `sup = high`.
+- If an earlier sub-question already has a concrete `value`, use that value to refine downstream `pred` fields whenever the downstream question depends on that earlier result.
+- Replace unresolved placeholder-style anchors in downstream `pred` with the concrete resolved value when possible.
+- Placeholder format uses source-aware anchors such as "sq_1_x1:artist" or "sq_2_x2:doctor".
+- The prefix before the variable tells you which earlier sub-question the placeholder came from.
+
+Answer type guidance:
+- relationship question -> relationship phrase, such as "husband and wife"
+- when question -> time point or time interval
+- who question -> person name
+- where question -> the most precise location possible
+- Are/Do question -> yes or no
+- number or quantity question -> a short quantity expression
+
+Output format:
+[
+  {
+    "id": "sq_1",
+    "text": "current question text",
+    "sup": "high",
+    "value": "short answer",
+    "pred": ["anchor 1", "anchor 2"]
+  }
+]
+
+Example:
+Question:
+What relationship did the inventors identified in sq_2 have?
+
+Evidence:
+"... the technique ... was invented by Charles and Ray Eames."
+
+Correct output:
+{
+  "id": "sq_3",
+  "text": "What relationship did the inventors identified in sq_2 have?",
+  "sup": "none",
+  "value": "",
+  "pred": ["Charles Eames", "Ray Eames"]
+}
+
+Why:
+- The evidence identifies the inventors.
+- But it does not directly answer the relationship question.
+
+Original question:
+!<INPUT 0>!
+
+Current sub-question list:
+!<INPUT 1>!
+
+Current evidence texts:
+!<INPUT 2>!
+
+Retry instruction:
+!<INPUT 3>!

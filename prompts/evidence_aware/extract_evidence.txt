@@ -1,0 +1,65 @@
+Variables:
+
+!<INPUT 0>!: original complex question
+!<INPUT 1>!: sub-question list
+!<INPUT 2>!: newly retrieved document texts from the current round only
+!<INPUT 3>!: current evidence texts
+!<INPUT 4>!: retry instruction if previous output failed, otherwise empty
+
+<comment-block-marker>###</comment-block-marker>
+
+Task:
+You are an evidence extraction model.
+
+Given:
+- the original complex question
+- the current sub-question list
+- the newly retrieved document texts from the current round only
+- the existing evidence texts
+
+Select the most relevant evidence passages from the newly retrieved document texts.
+
+Requirements:
+1. Prefer self-contained evidence passages copied directly from retrieved documents whenever possible.
+2. Preserve enough surrounding context so the evidence is understandable on its own.
+3. It is acceptable to include more context if that makes the evidence clearer or more reusable later.
+4. Do not extract fragments with missing referents such as "he", "she", "it", "they", "this", "his", "her", "their", "its", or similar expressions unless the passage also includes the explicit entity or object those words refer to. If the local passage still does not contain the explicit name, use the document title to make the referent explicit.
+5. You may include a full sentence or a short multi-sentence passage if that is necessary to preserve meaning.
+6. Do not use ellipses such as "..." to omit context.
+7. When the document title is needed to clarify the referent, include it directly in the evidence text, for example by prefixing the passage with "[Document Title]".
+8. Output only a JSON list of objects with one field: "text". Do not output any other fields.
+9. If none of the new documents provide useful evidence, return [].
+10. Return JSON only.
+11. Do not output markdown or extra text.
+
+Output format:
+[
+  {
+    "text": "supporting evidence sentence or short passage"
+  }
+]
+
+Field definitions:
+- text: string, a self-contained supporting sentence or passage with enough context to be useful later
+
+Example:
+[
+  {
+    "text": "[Honda] Honda introduced U.S. auto production in Marysville, Ohio in 1982, when the company opened its first U.S. assembly plant there."
+  }
+]
+
+Original question:
+!<INPUT 0>!
+
+Sub-question list:
+!<INPUT 1>!
+
+Newly retrieved document texts:
+!<INPUT 2>!
+
+Current evidence texts:
+!<INPUT 3>!
+
+Retry instruction:
+!<INPUT 4>!

@@ -1,0 +1,64 @@
+Variables:
+
+!<INPUT 0>!: original complex question
+!<INPUT 1>!: selected ready sub-questions
+!<INPUT 2>!: full current sub-question list
+!<INPUT 3>!: retry instruction if previous output failed, otherwise empty
+
+<comment-block-marker>###</comment-block-marker>
+
+Task:
+You are choosing retrieval modes for evidence-aware multi-hop QA.
+Return stable JSON for a small model.
+
+Available retrieval modes:
+- "Entity": support is weak and the missing gap is a key entity, relation, or direct fact
+- "Semantic": the main entity is already known, but local descriptive context is still incomplete
+- "Theme": the question lacks a clear entity anchor and needs broader topical context
+
+Important:
+1. Read each sub-question's current mode history in "hist".
+2. For each sub-question, evaluate its mode independently.
+3. Only use that sub-question's own "hist" when checking past modes.
+4. You must not select any mode that already appears in that same sub-question's "hist"; only choose a mode that has not been used for that sub-question.
+5. Do not avoid a mode just because it was used by a different sub-question.
+6. If a sub-question has explicit anchors and still lacks the core fact, prefer "Entity" and "Semantic".
+7. If a sub-question has no clear anchor, prefer "Theme".
+8. Every selected sub-question in this prompt still needs retrieval, so you must choose exactly one retrievable mode from {"Entity", "Semantic", "Theme"}.
+9. Return JSON only.
+10. Do not output markdown or extra text.
+
+Output format:
+[
+  {
+    "id": "sq_1",
+    "text": "current question text",
+    "mode": "Entity"
+  }
+]
+
+Example:
+[
+  {
+    "id": "sq_1",
+    "text": "Who is the cover artist of the book?",
+    "mode": "Entity"
+  },
+  {
+    "id": "sq_2",
+    "text": "Where did the person identified earlier die?",
+    "mode": "Theme"
+  }
+]
+
+Original question:
+!<INPUT 0>!
+
+Selected sub-questions:
+!<INPUT 1>!
+
+Full sub-question list:
+!<INPUT 2>!
+
+Retry instruction:
+!<INPUT 3>!
